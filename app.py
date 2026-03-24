@@ -17,12 +17,19 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 def init_connection():
+    # استدعاء البيانات من السكريت اللي سجلناها في الخطوة السابقة
+    creds_info = st.secrets["gcp_service_account"]
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    creds_path = os.path.join(current_dir, 'credentials.json')
-    creds = ServiceAccountCredentials.from_json_keyfile_name(creds_path, scope)
+    
+    # استخدام from_json_keyfile_dict بدلاً من from_json_keyfile_name
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_info, scope)
     client = gspread.authorize(creds)
-    return client.open("Daily_Tasks").sheet1
+    
+    try:
+        return client.open("Daily_Tasks").sheet1
+    except Exception as e:
+        st.error(f"خطأ في الاتصال بجوجل شيت: {e}")
+        st.stop()
 
 sheet = init_connection()
 
