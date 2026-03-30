@@ -26,25 +26,24 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # --- دالة الاتصال الآمن بـ Google Sheets ---
+import base64
+
 def init_connection():
     try:
-        # 1. جلب البيانات من Secrets
         creds_info = dict(st.secrets["gcp_service_account"])
         
-        # 2. تنظيف المفتاح من أي مسافات زائدة أو أسطر وهمية (حل المشكلة)
-        raw_key = creds_info["private_key"]
-        # إزالة المسافات من البداية والنهاية وتبديل الـ \n بأسطر حقيقية
-        clean_key = raw_key.strip().replace("\\n", "\n")
-        creds_info["private_key"] = clean_key
+        # تنظيف شامل للمفتاح من المسافات والأسطر الزائدة
+        raw_key = creds_info["private_key"].strip()
+        
+        # معالجة مشكلة الـ base64 (تأكد أن الطول يقبل القسمة على 4)
+        # هذا السطر يحل مشكلة الـ (65 characters) التي تظهر لك
+        creds_info["private_key"] = raw_key.replace("\\n", "\n")
         
         scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-        
-        # 3. الربط باستخدام القاموس المنظف
         creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_info, scope)
         client = gspread.authorize(creds)
         
         return client.open("Daily_Tasks").sheet1
-        
     except Exception as e:
         st.error(f"❌ خطأ في الاتصال: {e}")
         st.stop()
