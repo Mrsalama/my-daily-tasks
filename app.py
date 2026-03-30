@@ -28,25 +28,25 @@ st.markdown("""
 # --- دالة الاتصال الآمن بـ Google Sheets ---
 def init_connection():
     try:
-        # 1. جلب البيانات من Secrets وتحويلها لقاموس قابل للتعديل
+        # 1. جلب البيانات من Secrets
         creds_info = dict(st.secrets["gcp_service_account"])
         
-        # 2. حل مشكلة تشفير المفتاح الخاص (تبديل النص \n بأسطر حقيقية)
-        if "private_key" in creds_info:
-            creds_info["private_key"] = creds_info["private_key"].replace("\\n", "\n")
+        # 2. تنظيف المفتاح من أي مسافات زائدة أو أسطر وهمية (حل المشكلة)
+        raw_key = creds_info["private_key"]
+        # إزالة المسافات من البداية والنهاية وتبديل الـ \n بأسطر حقيقية
+        clean_key = raw_key.strip().replace("\\n", "\n")
+        creds_info["private_key"] = clean_key
         
         scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
         
-        # 3. إنشاء التصاريح والربط
+        # 3. الربط باستخدام القاموس المنظف
         creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_info, scope)
         client = gspread.authorize(creds)
         
-        # تأكد أن اسم الملف في جوجل شيت هو Daily_Tasks
         return client.open("Daily_Tasks").sheet1
         
     except Exception as e:
         st.error(f"❌ خطأ في الاتصال: {e}")
-        st.info("تأكد من إعداد Secrets بشكل صحيح ومشاركة الشيت مع الإيميل البرمجي.")
         st.stop()
 
 # تفعيل الاتصال
